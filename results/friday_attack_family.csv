@@ -1,0 +1,9 @@
+model,label,n,predicted_attack_rate,correct_rate
+Random Forest,BENIGN,30000,0.0017667,0.9982333
+Random Forest,Bot,1966,0.0000000,0.0000000
+Random Forest,DDoS,10000,0.6263000,0.6263000
+Random Forest,PortScan,10000,0.0026000,0.0026000
+Extra Trees,BENIGN,30000,0.0226333,0.9773667
+Extra Trees,Bot,1966,0.0000000,0.0000000
+Extra Trees,DDoS,10000,0.2150000,0.2150000
+Extra Trees,PortScan,10000,0.0011000,0.0011000
