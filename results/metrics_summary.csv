@@ -1,0 +1,5 @@
+split,model,roc_auc,pr_auc,attack_precision,attack_recall,attack_f1,false_positive_rate
+random,logistic_regression,0.969713,0.940802,0.864264,0.949644,0.904944,0.082375
+random,random_forest,0.999882,0.999768,0.997171,0.997058,0.997114,0.001563
+day-aware,logistic_regression,0.822038,0.806796,0.877572,0.382455,0.532737,0.039067
+day-aware,random_forest,0.748936,0.719369,0.990052,0.285441,0.443125,0.002100
