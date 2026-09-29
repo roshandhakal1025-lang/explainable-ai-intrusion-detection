@@ -1,87 +1,94 @@
 # Explainable AI for Network Intrusion Detection
 
-A reproducible research project investigating whether machine-learning intrusion detection systems can combine strong predictive performance with explanations that are useful for understanding network-security decisions.
+Reproducible cybersecurity/AI research examining a common benchmark pitfall: a model can look nearly perfect under a random flow-level split while failing to generalize to traffic from different attack scenarios.
 
 ## Research question
 
-**How accurately can supervised machine-learning models distinguish benign from malicious network traffic, and which network features most strongly influence their predictions?**
+**How accurately can supervised machine-learning models distinguish benign from malicious network traffic, which network features drive their predictions, and how robust are the models under cross-scenario distribution shift?**
 
-### Hypotheses
-- H1: Tree-based models will outperform a simple logistic-regression baseline on intrusion-detection metrics.
-- H2: Explainability methods such as SHAP will identify a relatively small subset of network-flow features that strongly influence predictions.
-- H3: False-positive analysis will reveal recurring patterns that are not obvious from aggregate accuracy alone.
+## Key result
 
-## Why this matters
+Using a deterministic **124,182-flow / 78-feature** development sample from CICIDS2017:
 
-Intrusion detection is a high-dimensional classification problem where accuracy alone is insufficient. Security analysts also need to understand why a model flags traffic. This project therefore evaluates both **predictive performance** and **model interpretability**.
+| Evaluation | Logistic Regression attack F1 | Random Forest attack F1 | Random Forest recall |
+|---|---:|---:|---:|
+| Random stratified split | 0.9049 | **0.9971** | **0.9971** |
+| Friday cross-scenario holdout | **0.5327** | 0.4431 | **0.2854** |
 
-## Planned dataset
+Random Forest's attack recall falls from **99.71% to about 28.5%** under the harder holdout. Family-level analysis shows the model detects much of DDoS but almost completely misses Bot and PortScan in Friday traffic.
 
-The initial experiment is designed for the **CICIDS2017** network intrusion dataset from the Canadian Institute for Cybersecurity. Raw data is intentionally not committed to this repository. See `data/README.md` for setup guidance.
+![F1 comparison](figures/f1_comparison.svg)
 
-## Methodology
+This does **not** prove that random splits are always invalid. It demonstrates that, for this CICIDS2017 experiment, the random split is substantially more optimistic than a cross-scenario stress test.
 
-1. Load and validate network-flow data.
-2. Clean missing/infinite values and normalize labels.
-3. Create a binary benign-vs-attack target.
-4. Use a stratified train/test split.
-5. Establish a Logistic Regression baseline.
-6. Train a Random Forest classifier.
-7. Compare precision, recall, F1, ROC-AUC, confusion matrices, and false-positive rates.
-8. Use SHAP to investigate global and local feature importance.
-9. Analyze misclassified traffic and document limitations.\n\n## Current headline result\n\nRandom-split performance substantially overstates cross-day generalization in the current experiment. Random Forest attack recall fell from **0.9971** on the random split to **0.2854** on the Friday holdout. See `RESULTS.md`.
+## Explainability
 
-## Repository structure
+SHAP analysis of the Random Forest identifies Destination Port, packet-length statistics, and TCP initial-window features among the strongest drivers. These explain model behavior; they are not causal claims about attacks.
 
-```
-.
-├── data/                  # dataset instructions; raw data excluded
-├── notebooks/             # exploratory/research notebooks
-├── src/
-│   ├── data.py            # preprocessing
-│   ├── train.py           # model training/evaluation
-│   └── explain.py         # SHAP explainability
-├── tests/                 # lightweight preprocessing tests
-├── .gitignore
-├── requirements.txt
-└── README.md
-```
+## Robustness experiments
 
-## Quick start
+- **Extra Trees:** better Friday ranking metrics in one run, but worse default-threshold attack recall.
+- **Threshold tuning:** validation-selected threshold 0.09 raises Friday recall from 0.2843 to 0.4652, but Friday false-positive rate rises from 0.21% to 5.83%.
+- **Class weighting:** 2x/4x attack weights do not materially repair Friday recall.
+- **Attack-family analysis:** Bot and PortScan remain the dominant failure modes.
+
+![Friday family detection](figures/friday_family_detection.svg)
+
+![Threshold trade-off](figures/threshold_tradeoff.svg)
+
+## Dataset
+
+CICIDS2017 MachineLearningCSV, eight source CSVs and **2,830,743 flows** in the supplied archive. Raw benchmark data is excluded from Git. See `DATASET_PROFILE.md` and `data/README.md`.
+
+The reported development experiment uses seed **42** and caps each source file at up to **10,000 benign + 10,000 attack flows**, preserving rare attacks and source-file provenance while fitting the available compute environment.
+
+## Reproduce
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-# Place CICIDS2017 CSV files under data/raw/
-python -m src.train --data-dir data/raw
+# Put the eight MachineLearningCSV files in data/raw/
+python -m src.train --data-dir data/raw --split-strategy random
+python -m src.train --data-dir data/raw --split-strategy day-aware
+pytest
 ```
 
-## Evaluation principles
+The defaults now match the reported 10k/10k development sampling configuration.
 
-Accuracy can be misleading for imbalanced cybersecurity data. The analysis therefore emphasizes precision, recall, F1, ROC-AUC, confusion matrices, and false positives. A future extension will add precision-recall AUC and attack-family multiclass evaluation.
+## Repository
 
-## Research status
+```
+.
+├── DATASET_PROFILE.md
+├── RESEARCH_PLAN.md
+├── RESULTS.md
+├── FINAL_REPORT.md
+├── data/README.md
+├── figures/
+├── results/
+├── src/
+│   ├── data.py
+│   ├── train.py
+│   ├── explain.py
+│   ├── failure_analysis.py
+│   └── threshold_analysis.py
+└── tests/
+```
 
-**Phase 2 — first real experiments completed.** On a deterministic 124,182-flow development sample, Random Forest achieved attack F1=0.9971 under a random split but only F1=0.4431 on a Friday cross-day holdout. This large generalization gap is the central finding so far. See `RESULTS.md` for the full metrics, interpretation, and limitations.
+## Research conclusion
 
-## Future extensions
+The strongest contribution of this project is not the near-perfect random-split score. It is the demonstrated **generalization gap** and the failure analysis explaining where that gap appears. Threshold adjustment improves sensitivity at a substantial false-alarm cost, while class weighting does little, suggesting distribution/attack-family shift is more important here than ordinary binary imbalance.
 
-- Multiclass attack-family classification
-- XGBoost/LightGBM comparison
-- Class-imbalance experiments
-- SHAP stability analysis
-- Cross-dataset generalization
-- Adversarial robustness
-- Reproducible experiment tracking
+The Friday holdout changes day, scenario, and attack-family composition simultaneously. It is therefore reported as a **cross-scenario generalization stress test**, not a pure temporal estimate.
 
-## Ethics and limitations
+Full metrics and caveats: **[RESULTS.md](RESULTS.md)**.
 
-This project is intended for defensive cybersecurity research. Dataset labels, collection conditions, class imbalance, temporal leakage, and differences between benchmark traffic and modern production networks can limit generalizability. Explainability scores describe model behavior; they do not establish causal relationships.
+## Ethics
+
+Defensive cybersecurity research only. Benchmark performance should not be interpreted as production readiness. SHAP importance is model-dependent and non-causal.
 
 ## Author
 
-Roshan Dhakal
-
-Research portfolio project for graduate study in artificial intelligence and cybersecurity.
+**Roshan Dhakal** — research portfolio project for graduate study in AI and cybersecurity.
