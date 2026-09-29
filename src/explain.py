@@ -8,7 +8,7 @@ from .data import load_research_sample, prepare_binary_data
 
 def explain_random_forest(data_dir, model_path="artifacts/random/random_forest.joblib", sample_size=500):
     """Compute reproducible SHAP importance for the attack class."""
-    df = load_research_sample(data_dir)
+    df = load_research_sample(data_dir, benign_per_file=10000, attack_per_file=10000)
     X, _, _ = prepare_binary_data(df)
     sample = X.sample(min(sample_size, len(X)), random_state=42)
     model = joblib.load(model_path)
