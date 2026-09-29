@@ -60,3 +60,38 @@ H1 is supported only under the random split; it is **not supported under the Fri
 - CICIDS2017 is a benchmark collected in 2017 and does not represent all contemporary network environments.
 - Rare classes such as Heartbleed and Infiltration are too small for strong class-specific conclusions.
 - Random Forest/SHAP importance is model-dependent and non-causal.
+
+
+## Friday attack-family failure analysis
+
+A second reproducible run (same seed and 10,000-per-class/file development cap) examined Friday predictions by attack family. Small metric differences from the first run reflect the explicitly documented development sampling configuration.
+
+### Random Forest
+
+| Friday class | Test flows | Predicted as attack | Detection rate |
+|---|---:|---:|---:|
+| Bot | 1,966 | 0 | **0.00%** |
+| DDoS | 10,000 | 6,263 | **62.63%** |
+| PortScan | 10,000 | 26 | **0.26%** |
+| Benign | 30,000 | 53 false alarms | 99.82% benign specificity |
+
+Overall Friday attack recall was **28.63%** with **99.16% attack precision**.
+
+This localizes the generalization failure: the model is not uniformly weak on Friday. It detects a substantial fraction of DDoS, but almost completely misses Bot and PortScan traffic.
+
+### Alternative tree ensemble
+
+Extra Trees was tested as a simple model-family mitigation rather than assuming Random Forest was uniquely responsible for the failure.
+
+| Model | Friday ROC-AUC | Friday PR-AUC | Attack recall | Attack F1 |
+|---|---:|---:|---:|---:|
+| Random Forest | 0.7726 | 0.7377 | **0.2863** | **0.4443** |
+| Extra Trees | **0.8592** | **0.7849** | 0.0984 | 0.1742 |
+
+Extra Trees improves ranking metrics but performs worse at the default classification threshold. It detects 21.5% of DDoS, 0% of Bot, and 0.11% of PortScan. Therefore simply swapping tree ensembles does **not** solve cross-day attack detection.
+
+### What this tells us
+
+The failure is strongly associated with attack-family/distribution shift. Friday introduces Bot, PortScan, and DDoS scenarios while the training days contain different attack families. Consequently, the Friday experiment is best interpreted as a **cross-scenario / novel-family generalization stress test**, not merely a temporal holdout.
+
+The result also shows why ROC-AUC alone is insufficient: Extra Trees has a higher Friday ROC-AUC than Random Forest while its default-threshold attack recall is much worse. Operational threshold behavior must therefore be reported alongside ranking metrics.
