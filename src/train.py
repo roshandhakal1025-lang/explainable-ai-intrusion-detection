@@ -60,5 +60,5 @@ def main(data_dir, split_strategy, benign_per_file, attack_per_file):
 if __name__=="__main__":
     p=argparse.ArgumentParser(); p.add_argument("--data-dir",required=True)
     p.add_argument("--split-strategy",choices=["random","day-aware"],default="random")
-    p.add_argument("--benign-per-file",type=int,default=25000); p.add_argument("--attack-per-file",type=int,default=25000)
+    p.add_argument("--benign-per-file",type=int,default=10000); p.add_argument("--attack-per-file",type=int,default=10000)
     a=p.parse_args(); main(a.data_dir,a.split_strategy,a.benign_per_file,a.attack_per_file)
