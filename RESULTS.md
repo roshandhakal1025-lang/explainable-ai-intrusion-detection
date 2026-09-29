@@ -95,3 +95,37 @@ Extra Trees improves ranking metrics but performs worse at the default classific
 The failure is strongly associated with attack-family/distribution shift. Friday introduces Bot, PortScan, and DDoS scenarios while the training days contain different attack families. Consequently, the Friday experiment is best interpreted as a **cross-scenario / novel-family generalization stress test**, not merely a temporal holdout.
 
 The result also shows why ROC-AUC alone is insufficient: Extra Trees has a higher Friday ROC-AUC than Random Forest while its default-threshold attack recall is much worse. Operational threshold behavior must therefore be reported alongside ranking metrics.
+
+
+## Threshold tuning experiment
+
+To avoid tuning on the Friday test set, the Monday-Thursday development data was split again into training and validation partitions. The threshold was selected on validation data as the **lowest-threshold operating point that maximized recall while keeping validation FPR at or below 1%**. It selected **0.09**.
+
+| Friday setting | Precision | Recall | F1 | FPR |
+|---|---:|---:|---:|---:|
+| Default threshold 0.50 | 0.9902 | 0.2843 | 0.4418 | 0.0021 |
+| Validation-selected threshold 0.09 | 0.8539 | **0.4652** | **0.6023** | 0.0583 |
+
+Lowering the threshold recovered substantial DDoS recall (99.84%), but Friday FPR rose to **5.83%**, Bot remained essentially undetected (0.05%), and PortScan recall was only 2.34%. Threshold tuning therefore improves the sensitivity/false-alarm trade-off but **does not solve novel-family generalization**.
+
+## Class-weight experiment
+
+Three Random Forest weighting strategies were evaluated at threshold 0.50 on the Friday holdout.
+
+| Strategy | Precision | Recall | F1 | FPR |
+|---|---:|---:|---:|---:|
+| Balanced subsample | 0.9908 | 0.2858 | 0.4436 | 0.0019 |
+| Attack weight 2x | 0.9912 | **0.2867** | **0.4447** | 0.0019 |
+| Attack weight 4x | 0.9915 | 0.2752 | 0.4308 | **0.0017** |
+
+Changing class weights does not materially repair Friday recall. This strengthens the interpretation that the dominant issue is distribution/attack-family shift rather than ordinary binary class imbalance.
+
+## Final conclusion
+
+The central empirical result is a large gap between conventional random-split performance and cross-scenario performance. Random Forest is nearly perfect under the random split but misses most attacks in the Friday stress test, especially Bot and PortScan. SHAP shows that the fitted model relies heavily on a compact set of port, packet-length, and TCP-window features. Threshold tuning can recover some sensitivity, mainly for DDoS, but at a substantial false-positive cost; class weighting provides almost no improvement.
+
+The project therefore supports a practical methodological conclusion: **high benchmark scores from random flow-level splits should not be treated as evidence of robust intrusion detection without distribution-shift evaluation.** The Friday holdout is intentionally difficult and confounds day, scenario, and attack family, so it should be described as a stress test rather than a pure temporal estimate.
+
+## Reproducibility status
+
+All reported development experiments use seed 42 and the documented 10,000-benign / 10,000-attack per-file cap. Raw CICIDS2017 files are excluded from Git. Machine-readable metric tables are stored in `results/`, and the scripts in `src/` implement preprocessing, training, explainability, family-level failure analysis, and validation-based threshold selection.
