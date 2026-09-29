@@ -1,0 +1,16 @@
+feature,mean_abs_shap
+Destination Port,0.058155
+Min Packet Length,0.031350
+Init_Win_bytes_backward,0.029270
+Init_Win_bytes_forward,0.026142
+Fwd Packet Length Mean,0.022874
+Fwd Packet Length Min,0.018742
+Bwd Packet Length Std,0.018086
+Packet Length Variance,0.017983
+Fwd Packet Length Max,0.017058
+Bwd Packet Length Min,0.016903
+Max Packet Length,0.016245
+Subflow Fwd Bytes,0.014841
+Packet Length Std,0.014267
+PSH Flag Count,0.013780
+Avg Fwd Segment Size,0.013060
