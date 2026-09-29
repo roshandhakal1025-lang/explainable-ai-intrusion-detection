@@ -29,7 +29,7 @@ The initial experiment is designed for the **CICIDS2017** network intrusion data
 6. Train a Random Forest classifier.
 7. Compare precision, recall, F1, ROC-AUC, confusion matrices, and false-positive rates.
 8. Use SHAP to investigate global and local feature importance.
-9. Analyze misclassified traffic and document limitations.
+9. Analyze misclassified traffic and document limitations.\n\n## Current headline result\n\nRandom-split performance substantially overstates cross-day generalization in the current experiment. Random Forest attack recall fell from **0.9971** on the random split to **0.2854** on the Friday holdout. See `RESULTS.md`.
 
 ## Repository structure
 
@@ -64,7 +64,7 @@ Accuracy can be misleading for imbalanced cybersecurity data. The analysis there
 
 ## Research status
 
-**Phase 1 — experimental framework.** The repository currently establishes the research design and reproducible pipeline. Numerical findings will be reported only after experiments are run on the documented dataset.
+**Phase 2 — first real experiments completed.** On a deterministic 124,182-flow development sample, Random Forest achieved attack F1=0.9971 under a random split but only F1=0.4431 on a Friday cross-day holdout. This large generalization gap is the central finding so far. See `RESULTS.md` for the full metrics, interpretation, and limitations.
 
 ## Future extensions
 
